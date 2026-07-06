@@ -1,0 +1,9 @@
+.venv/
+.env
+.vscode/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+docs/ROADMAP.md
+datasets/
