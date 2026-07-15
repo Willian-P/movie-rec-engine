@@ -220,3 +220,10 @@ Após isso, o dataframe *filtered_movies* passou a conter `22 colunas`, das quai
 Com a conclusão da etapa `Engenharia de Atributos e Processamento de Texto`, os datasets limpos e otimizados foram persistidos em disco para serem consumidos diretamente pela etapa de modelagem, evitando a reexecução desnecessária do pipeline de limpeza.
 
 Os dados foram salvos no diretório `../datasets/processed/`.
+
+---
+
+# Nota de Atualização (Retorno ao Marco 1) 
+Após os testes iniciais de modelagem no Marco 2, identifiquei a necessidade de reprocessar a coluna `title` para tratar artigos no final (ex: "Matrix, The"). Com a nova coluna `search_title` gerada, o dataframe final *filtered_movies* passou a conter **23 colunas**, sendo duas do tipo string (`title` e `search_title`) e o restante numéricas (`movieId`, `year` e os gêneros em inteiros). Toda a pipeline do notebook `01_eda_and_cleaning.ipynb` foi executada novamente para consolidar essa nova estrutura.
+
+---
