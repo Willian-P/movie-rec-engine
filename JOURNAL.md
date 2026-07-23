@@ -281,24 +281,28 @@ Para compreender o impacto da normalização na prática, considere os seguintes
 Efetuando os cálculos passo a passo:
 
 1. **Norma do vetor A ($\|A\|$):**
-   $$
-   \|A\| = \sqrt{1^2 + 1^2 + 0^2} = \sqrt{2} \approx 1.414
-   $$
+
+$$
+\|A\| = \sqrt{1^2 + 1^2 + 0^2} = \sqrt{2} \approx 1.414
+$$
 
 2. **Norma do vetor B ($\|B\|$):**
-   $$
-   \|B\| = \sqrt{1^2 + 1^2 + 1^2} = \sqrt{3} \approx 1.732
-   $$
+
+$$
+\|B\| = \sqrt{1^2 + 1^2 + 1^2} = \sqrt{3} \approx 1.732
+$$
 
 3. **Produto Escalar ($A \cdot B$):**
-   $$
-   A \cdot B = (1 \times 1) + (1 \times 1) + (0 \times 1) = 2
-   $$
+
+$$
+A \cdot B = (1 \times 1) + (1 \times 1) + (0 \times 1) = 2
+$$
 
 4. **Similaridade de Cosseno final:**
-   $$
-   \text{sim}(A, B) = \frac{2}{\sqrt{2} \times \sqrt{3}} = \frac{2}{\sqrt{6}} \approx 0.816 \quad (81.6\%)
-   $$
+
+$$
+\text{sim}(A, B) = \frac{2}{\sqrt{2} \times \sqrt{3}} = \frac{2}{\sqrt{6}} \approx 0.816 \quad (81.6\%)
+$$
 
 **Conclusão:** 
 Este exemplo demonstra que a similaridade só atingirá o valor máximo de $1.0$ ($100\%$) se os dois filmes compartilharem **exatamente a mesma combinação de gêneros**, sem nenhum elemento a mais ou a menos. Graças a essa normalização do denominador, o modelo evita beneficiar injustamente filmes que possuem uma quantidade excessiva de gêneros associados.
@@ -315,3 +319,31 @@ Sobre a dúvida de como avaliar o modelo sem as métricas tradicionais de aprend
 
 Esse modelo simples cumpre o proposto e serve como inicial. Daqui para frente, posso experimentar incluir o ano nesta abordagem de conteúdo ou avançar para a filtragem colaborativa com o dataset de `ratings`. Ainda preciso decidir isso, mas refinamentos mais complexos não serão feitos agora.
 
+## Filtragem Baseada em Conteúdo Utilizando o Ano
+
+Antes de avançar para a filtragem colaborativa, decidi explorar o dado do ano de lançamento para aprimorar as recomendações. Para aproveitar essa *feature*, cogitei duas abordagens:
+
+1. **Ponderação do Ano no Vetor de Similaridade:** Normalizar a coluna `year` (em uma escala de 0 a 1) e atribuir a ela um peso reduzido no vetor de características antes de calcular a similaridade de cosseno.
+   * *Ressalva:* Esta abordagem poderia introduzir ruído na similaridade estrita de gêneros, correndo o risco de o modelo recomendar um filme de um gênero totalmente diferente apenas por ter sido lançado no mesmo ano. Um cenário drástico seria a recomendação de um filme de terror a partir de um infantil, simplesmente pela coincidência do ano de lançamento.
+
+2. **Ordenação Lexicográfica (Desempate por Proximidade de Ano):** Manter a similaridade de cosseno focada 100% na pureza dos gêneros e utilizar a diferença absoluta entre os anos de lançamento estritamente como um critério de ordenação secundário para desempate.
+
+Optei por seguir com a **Abordagem 2 (Desempate)**.
+
+A primeira opção poderia distorcer a interpretação do *score* de similaridade. Já a segunda se encaixa muito bem nas características do dataset atual: como o modelo de gêneros ainda é simples, o cálculo de similaridade gera muitos empates com *score* 1.0.
+
+Anteriormente, na hora de apresentar o `top_n` (5 filmes) ao usuário, a ordenação desses empates dependia apenas da ordem em que os filmes estavam cadastrados na base — o que não é um critério muito justo. Ordenar os empates pela proximidade do ano de lançamento torna a recomendação mais coerente. Concluí que esta solução é mais limpa, determinística e suficiente para o estágio atual do projeto.
+
+
+### Desenvolvimento
+Tomando como base a função `get_content_recommendations`, criei a nova função `get_content_recommendations_with_year`, incorporando a lógica de desempate por proximidade temporal.
+
+> **Problema Identificado (Ruído no Atributo IMAX):** 
+> Durante os testes da nova função, percebi que a lista de gêneros contém a tag `IMAX`. No entanto, `IMAX` não é um gênero cinematográfico, mas sim um formato de exibição e filmagem. 
+> 
+> Isso impacta diretamente as recomendações. Por exemplo: os filmes *Toy Story*, *Toy Story 2* e *Toy Story 3* compartilham a mesma essência de gêneros, mas apenas o terceiro filme possui a tag `IMAX`. Essa diferença reduz a similaridade calculada entre eles e prejudica o resultado da recomendação. 
+> 
+> Cogitei atribuir um peso menor a essa coluna ou até mesmo removê-la. Fiquei em dúvida se a remoção poderia prejudicar um usuário que buscasse especificamente por filmes nesse formato, mas, considerando que `IMAX` é um atributo de exibição (e não de conteúdo), entendi que sua presença na matriz de gêneros gera mais ruído do que valor.
+
+**Decisão de Mudança de Rota:** 
+Diante dessa constatação, decidi interromper a modelagem neste ponto e **retornar ao Marco 1** para remover o atributo `IMAX` da coluna de gêneros, garantindo a limpeza e a consistência dos dados antes de reexecutar esta etapa.
